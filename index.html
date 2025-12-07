@@ -1,0 +1,400 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Maaş Hesaplama Simülatörü - Gençlik ve Spor Bakanlığı 10 No'lu İş Kolu</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Inter font for a clean look */
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap');
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f7f9fc;
+        }
+        .card {
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        }
+    </style>
+</head>
+<body class="p-4 sm:p-8">
+
+<div id="app" class="max-w-4xl mx-auto">
+    <header class="text-center mb-8 p-4 bg-white rounded-lg card">
+        <h1 class="text-3xl font-bold text-gray-800 mb-2">Maaş Hesaplama Simülatörü</h1>
+        <p class="text-sm text-gray-500">Gençlik ve Spor Bakanlığı 10 No'lu İş Kolu (1 Temmuz 2025 verileri baz alınmıştır)</p>
+    </header>
+
+    <div class="lg:flex lg:space-x-8">
+        <!-- Sol Kolon: Parametre Seçimi -->
+        <div class="lg:w-2/3 bg-white p-6 rounded-lg card mb-8 lg:mb-0">
+            <h2 class="text-xl font-semibold text-indigo-600 mb-4 border-b pb-2">Ödeme Parametreleri</h2>
+
+            <!-- 1. Temel Ücret ve Vergi Dilimi -->
+            <section class="mb-6 p-4 border rounded-lg bg-indigo-50/50">
+                <h3 class="font-bold text-lg text-gray-700 mb-3">Temel Hesaplama & Vergi Dilimi</h3>
+
+                <div class="mb-4">
+                    <label for="workingDays" class="block text-sm font-medium text-gray-700 mb-1">Çalışılan Gün Sayısı (Aylık):</label>
+                    <input type="number" id="workingDays" value="22" min="1" max="31" class="w-full p-2 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500" onchange="calculateSalary()" />
+                </div>
+
+                <div class="mb-4">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Hedef Vergi Dilimi (NET Ücret Bazı):</label>
+                    <div class="flex flex-wrap gap-2 mt-1">
+                        <label class="inline-flex items-center">
+                            <input type="radio" name="taxRate" value="net15" checked class="form-radio h-4 w-4 text-indigo-600" onchange="calculateSalary()">
+                            <span class="ml-2 text-gray-700">NET %15</span>
+                        </label>
+                        <label class="inline-flex items-center">
+                            <input type="radio" name="taxRate" value="net20" class="form-radio h-4 w-4 text-indigo-600" onchange="calculateSalary()">
+                            <span class="ml-2 text-gray-700">NET %20</span>
+                        </label>
+                        <label class="inline-flex items-center">
+                            <input type="radio" name="taxRate" value="net27" class="form-radio h-4 w-4 text-indigo-600" onchange="calculateSalary()">
+                            <span class="ml-2 text-gray-700">NET %27</span>
+                        </label>
+                    </div>
+                    <p class="text-xs text-gray-500 mt-1">Seçiminiz, Yevmiye ve Primler gibi kalemlerin net miktarını etkileyecektir.</p>
+                </div>
+            </section>
+
+            <!-- 2. İzin Kullanımı -->
+            <section class="mb-6 p-4 border rounded-lg bg-red-50/50">
+                <h3 class="font-bold text-lg text-gray-700 mb-3">İzin ve Kesintiler</h3>
+                <div class="mb-4">
+                    <label for="leaveDays" class="block text-sm font-medium text-gray-700 mb-1">Kullanılan İzin Günü Sayısı (Maaş Etkisi Olacaksa):</label>
+                    <input type="number" id="leaveDays" value="0" min="0" max="30" class="w-full p-2 border border-gray-300 rounded-lg focus:ring-red-500 focus:border-red-500" onchange="calculateSalary()" />
+                    <p class="text-xs text-gray-500 mt-1">Kullanılan her izin günü, aylık Yevmiye ödemenizi düşürecektir.</p>
+                </div>
+            </section>
+
+            <!-- 3. Fazla Mesai -->
+            <section class="mb-6 p-4 border rounded-lg bg-green-50/50">
+                <h3 class="font-bold text-lg text-gray-700 mb-3">Fazla Mesai Ücreti (564,59 TL NET 15% için 403,63 TL)</h3>
+                <div class="space-y-3">
+                    <div class="flex items-center">
+                        <input type="checkbox" id="overtimeCheckbox" class="form-checkbox h-5 w-5 text-green-600 rounded" onchange="toggleOvertime()">
+                        <label for="overtimeCheckbox" class="ml-2 text-sm font-medium text-gray-700">Fazla Mesai Eklensin</label>
+                    </div>
+
+                    <div id="overtimeOptions" class="hidden pl-6 border-l-2 border-green-200 space-y-3">
+                        <div class="mb-4">
+                            <label class="block text-sm font-medium text-gray-700 mb-1">Mesai Tipi:</label>
+                            <div class="flex flex-wrap gap-4">
+                                <label class="inline-flex items-center">
+                                    <input type="radio" name="overtimeType" value="full" checked class="form-radio h-4 w-4 text-green-600" onchange="calculateSalary()">
+                                    <span class="ml-2 text-gray-700">Tam Gün (1 gün mesai)</span>
+                                </label>
+                                <label class="inline-flex items-center">
+                                    <input type="radio" name="overtimeType" value="half" class="form-radio h-4 w-4 text-green-600" onchange="calculateSalary()">
+                                    <span class="ml-2 text-gray-700">Yarım Gün (0.5 gün mesai)</span>
+                                </label>
+                            </div>
+                        </div>
+
+                        <div class="mb-4">
+                            <label for="overtimeDays" class="block text-sm font-medium text-gray-700 mb-1">Mesai Kullanılan Gün Sayısı:</label>
+                            <input type="number" id="overtimeDays" value="1" min="1" class="w-full p-2 border border-gray-300 rounded-lg focus:ring-green-500 focus:border-green-500" onchange="calculateSalary()" />
+                        </div>
+                    </div>
+                </div>
+            </section>
+            
+            <!-- 4. Seçilebilir Diğer Ödemeler (Yol, Prim) -->
+            <section class="mb-6 p-4 border rounded-lg bg-yellow-50/50">
+                <h3 class="font-bold text-lg text-gray-700 mb-3">Seçilebilir Ek Ödemeler</h3>
+
+                <div class="mb-4">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Yol Ücreti Seçimi:</label>
+                    <div class="flex flex-wrap gap-4 mt-1">
+                        <label class="inline-flex items-center">
+                            <input type="radio" name="travelType" value="bsehir" checked class="form-radio h-4 w-4 text-yellow-600" onchange="calculateSalary()">
+                            <span class="ml-2 text-gray-700">B.ŞEHİR (Brüt 5.753,13 TL)</span>
+                        </label>
+                        <label class="inline-flex items-center">
+                            <input type="radio" name="travelType" value="dsehir" class="form-radio h-4 w-4 text-yellow-600" onchange="calculateSalary()">
+                            <span class="ml-2 text-gray-700">D. ŞEHİR (Brüt 3.835,42 TL)</span>
+                        </label>
+                    </div>
+                </div>
+                
+                <div class="mb-4">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">İş Primi Seçimi:</label>
+                    <div class="flex flex-wrap gap-4 mt-1">
+                        <label class="inline-flex items-center">
+                            <input type="radio" name="isPrimi" value="primi8" checked class="form-radio h-4 w-4 text-yellow-600" onchange="calculateSalary()">
+                            <span class="ml-2 text-gray-700">İş Primi %8 (Brüt 169,38 TL)</span>
+                        </label>
+                        <label class="inline-flex items-center">
+                            <input type="radio" name="isPrimi" value="primi9" class="form-radio h-4 w-4 text-yellow-600" onchange="calculateSalary()">
+                            <span class="ml-2 text-gray-700">İş Primi %9 (Brüt 190,55 TL)</span>
+                        </label>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 5. Diğer Sabit Ödemeler (Opsiyonel) -->
+            <section class="p-4 border rounded-lg bg-blue-50/50">
+                <h3 class="font-bold text-lg text-gray-700 mb-3">Diğer Sabit Ödemeler (Varsayılan olarak dahil edilmiştir, hariç tutmak için kaldırın)</h3>
+                <div class="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                    <!-- Checkboxes for other items -->
+                </div>
+                <p class="text-sm text-gray-500 mt-4">Aşağıdaki ödemeler varsayılan olarak aylık toplam ücrete eklenmiştir.</p>
+                <div id="fixedPaymentsList" class="grid grid-cols-2 md:grid-cols-3 gap-3 mt-2">
+                    <!-- Fixed payments will be rendered here -->
+                </div>
+            </section>
+        </div>
+
+        <!-- Sağ Kolon: Sonuçlar -->
+        <div class="lg:w-1/3 sticky top-4">
+            <div class="bg-indigo-700 text-white p-6 rounded-lg card">
+                <h2 class="text-2xl font-bold mb-4">NET MAAŞ SONUCU</h2>
+                
+                <div class="space-y-3 mb-6">
+                    <div class="flex justify-between">
+                        <span class="font-medium">Temel Net Ücret:</span>
+                        <span id="baseNetSalary" class="font-semibold">0,00 TL</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span class="font-medium">Toplam Ek Ödeme Net:</span>
+                        <span id="totalAdditions" class="font-semibold text-green-300">0,00 TL</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span class="font-medium">Toplam Kesinti Net:</span>
+                        <span id="totalDeductions" class="font-semibold text-red-300">0,00 TL</span>
+                    </div>
+                </div>
+
+                <div class="border-t border-indigo-500 pt-4">
+                    <div class="flex justify-between text-3xl font-extrabold">
+                        <span>TOPLAM NET MAAŞ:</span>
+                        <span id="totalNetSalary">0,00 TL</span>
+                    </div>
+                </div>
+
+                <div class="text-center mt-4">
+                    <button onclick="calculateSalary()" class="w-full bg-yellow-400 text-gray-900 font-bold py-3 rounded-lg hover:bg-yellow-500 transition duration-150">
+                        HESAPLA / GÜNCELLE
+                    </button>
+                </div>
+            </div>
+            
+            <div class="bg-gray-100 p-4 rounded-lg mt-4 text-sm text-gray-600">
+                <h3 class="font-semibold mb-2 text-gray-700">Hesaplama Notları:</h3>
+                <ul class="list-disc list-inside space-y-1">
+                    <li>Hesaplama, resimdeki BRÜT/NET değerleri esas alır.</li>
+                    <li>Sosyal yardım, yemek, gece zammı gibi sabit ödemeler varsayılan olarak NET %15 üzerinden hesaplanıp eklenmiştir.</li>
+                    <li>Vergi dilimi seçimi temel ücret, prim ve ek ödemelerin net değerini doğrudan değiştirir.</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Resimden alınan statik ödeme verileri (BRÜT ve 3 farklı NET dilimine göre)
+    const PAYMENT_DATA = [
+        // Yevmiye (Günlük, çalışma günü ile çarpılacak)
+        { id: 'yevmiye', name: "1. Yevmiye (Günlük)", type: 'dynamic_daily', gross: { brut15: 2117.23, brut20: 2117.23, brut27: 2117.23 }, net: { net15: 1513.63, net20: 1423.65, net27: 1297.67 }, category: 'base' },
+        
+        // Sendika Aidatı (Kesinti)
+        { id: 'sendika', name: "2. Sendika Aidatı %70 (KESİNTİ)", type: 'fixed', gross: { brut15: -1482.06, brut20: -1482.06, brut27: -1482.06 }, net: { net15: -1259.75, net20: -1185.65, net27: -1081.90 }, category: 'deduction' },
+
+        // UBGT Çalışma Ücreti (Sabit/Koşullu Ek Ödeme - varsayılan olarak ekliyorum)
+        { id: 'ubgt', name: "3. UBGT Çalışma Ücreti", type: 'fixed', gross: { brut15: 4234.46 }, net: { net15: 3027.26, net20: 2847.29, net27: 2595.34 }, category: 'addition', defaultChecked: true },
+
+        // Fazla Mesai Ücreti (Günlük, dinamik olarak hesaplanacak)
+        { id: 'fazlaMesai', name: "4. Fazla Mesai (Günlük Ek Ücret)", type: 'dynamic_overtime', gross: { brut15: 564.59 }, net: { net15: 403.63, net20: 379.64, net27: 346.05 }, category: 'addition' },
+        
+        // Yol Ücretleri (Seçmeli)
+        { id: 'yolBsehir', name: "5. Yol (B.ŞEHİR)", type: 'selectable_travel', gross: { brut15: 5753.13 }, net: { net15: 4112.97 }, category: 'addition', selectionGroup: 'travelType', selectionValue: 'bsehir', defaultChecked: true },
+        { id: 'yolDsehir', name: "6. Yol (D. ŞEHİR)", type: 'selectable_travel', gross: { brut15: 3835.42 }, net: { net15: 2741.98 }, category: 'addition', selectionGroup: 'travelType', selectionValue: 'dsehir', defaultChecked: false },
+        
+        // Diğer Sabit Ödemeler (NET 15% baz alınmıştır)
+        { id: 'yemekUcreti', name: "7. Yemek Ücreti", type: 'fixed', net: { net15: 260.87 }, category: 'addition', defaultChecked: true },
+        { id: 'ciftYemekUcreti', name: "8. Çift Yemek Ücreti", type: 'fixed', net: { net15: 521.74 }, category: 'addition', defaultChecked: true },
+        { id: 'hizmetZammi', name: "9. Hizmet Zammı (1 YIL)", type: 'fixed', net: { net15: 14.63 }, category: 'addition', defaultChecked: true },
+        { id: 'sosyalYardim', name: "10. Sosyal Yardım", type: 'fixed', net: { net15: 3156.11 }, category: 'addition', defaultChecked: true },
+        { id: 'geceZammi', name: "11. Gece Zammı (1 saat)", type: 'fixed', net: { net15: 16.15 }, category: 'addition', defaultChecked: true },
+        { id: 'yogurtYardimi', name: "12. Yoğurt Yardımı", type: 'fixed', net: { net15: 45.42 }, category: 'addition', defaultChecked: true },
+        { id: 'giyimYardimi', name: "13. Giyim Yardımı", type: 'fixed', net: { net15: 167.20 }, category: 'addition', defaultChecked: true },
+        
+        // İş Primleri (Seçmeli)
+        { id: 'isPrimi8', name: "14. İş Primi %8", type: 'selectable_isPrimi', gross: { brut15: 169.38 }, net: { net15: 121.09, net20: 113.89, net27: 103.81 }, category: 'addition', selectionGroup: 'isPrimi', selectionValue: 'primi8', defaultChecked: true },
+        { id: 'isPrimi9', name: "15. İş Primi %9", type: 'selectable_isPrimi', gross: { brut15: 190.55 }, net: { net15: 136.23, net20: 128.13, net27: 116.79 }, category: 'addition', selectionGroup: 'isPrimi', selectionValue: 'primi9', defaultChecked: false },
+
+        // Ek Ödeme (Sabit)
+        { id: 'ekOdeme', name: "16. Ek Ödeme", type: 'fixed', net: { net15: 7172.96 }, category: 'addition', defaultChecked: true },
+        
+        // Aile/Kişisel Ödemeler (Sabit/Koşullu)
+        { id: 'dogumYardimi', name: "17. Doğum Yardımı", type: 'fixed', net: { net15: 1128.74 }, category: 'addition', defaultChecked: true },
+        { id: 'evlilikYardimi', name: "18. Evlilik Yardımı", type: 'fixed', net: { net15: 2276.64 }, category: 'addition', defaultChecked: true },
+        { id: 'iscininOlumu', name: "19. İşçinin Ölümü", type: 'fixed', net: { net15: 5691.03 }, category: 'addition', defaultChecked: true },
+        { id: 'iscininAilesindenOlum', name: "20. İşçinin Ailesinden Ölüm", type: 'fixed', net: { net15: 3415.25 }, category: 'addition', defaultChecked: true },
+        { id: 'isKazasi', name: "21. İş Kazası ile İşçi Ölümü", type: 'fixed', net: { net15: 9104.90 }, category: 'addition', defaultChecked: true },
+        { id: 'dogalAfet', name: "22. Doğal Afet Yardımı", type: 'fixed', net: { net15: 1321.27, net20: 1204.35 }, category: 'addition', defaultChecked: true },
+        { id: 'kresYardimi', name: "23. Kreş Yardımı", type: 'fixed', net: { net15: 1416.00 }, category: 'addition', defaultChecked: true },
+        { id: 'ciplakEylulIkramiyesi', name: "24. Çıplak Eylül İkramiyesi", type: 'fixed', net: { net15: 38930.14 }, category: 'addition', defaultChecked: true },
+        { id: 'ciplakAracikTediye', name: "25. Çıplak Aralık Tediyesi", type: 'fixed', net: { net15: 16869.73 }, category: 'addition', defaultChecked: true },
+    ];
+
+    // Helper function to format currency
+    const formatCurrency = (value) => {
+        return (Math.round(value * 100) / 100).toLocaleString('tr-TR', { style: 'currency', currency: 'TRY' });
+    };
+
+    // Helper function to get the current selected tax rate key (e.g., 'net15')
+    const getSelectedTaxRate = () => {
+        const selectedRadio = document.querySelector('input[name="taxRate"]:checked');
+        return selectedRadio ? selectedRadio.value : 'net15';
+    };
+
+    // Toggles the visibility of overtime options
+    function toggleOvertime() {
+        const isChecked = document.getElementById('overtimeCheckbox').checked;
+        const optionsDiv = document.getElementById('overtimeOptions');
+        if (isChecked) {
+            optionsDiv.classList.remove('hidden');
+        } else {
+            optionsDiv.classList.add('hidden');
+        }
+        calculateSalary();
+    }
+
+    // Renders the fixed payment checkboxes/list
+    function renderFixedPayments() {
+        const container = document.getElementById('fixedPaymentsList');
+        container.innerHTML = '';
+        
+        // Filter for items that are not dynamic or part of a selection group (radio buttons)
+        const fixedItems = PAYMENT_DATA.filter(item => 
+            item.type === 'fixed' || 
+            item.type === 'addition' // UBGT etc. are here
+        );
+
+        fixedItems.forEach(item => {
+            // Skip the union fee as it's a fixed deduction
+            if (item.id === 'sendika') return;
+
+            const taxRate = getSelectedTaxRate();
+            const netValue = item.net[taxRate] || item.net['net15'] || 0; // Fallback to net15
+
+            const div = document.createElement('div');
+            div.className = 'flex items-center space-x-2';
+            div.innerHTML = `
+                <input type="checkbox" id="item-${item.id}" data-net-value="${netValue}" ${item.defaultChecked ? 'checked' : ''} class="form-checkbox h-4 w-4 text-blue-600 rounded" onchange="calculateSalary()">
+                <label for="item-${item.id}" class="text-xs text-gray-700 select-none" title="${item.name}">${item.name.split('(')[0].trim()}</label>
+            `;
+            container.appendChild(div);
+        });
+    }
+
+    // Main calculation function
+    function calculateSalary() {
+        const taxRate = getSelectedTaxRate();
+        const workingDays = parseFloat(document.getElementById('workingDays').value) || 0;
+        const leaveDays = parseFloat(document.getElementById('leaveDays').value) || 0;
+
+        let totalNet = 0;
+        let baseNet = 0;
+        let totalAdditions = 0;
+        let totalDeductions = 0;
+
+        // 1. DYNAMIC & BASE ITEMS (Yevmiye and Sendika Aidatı)
+        
+        // a) Yevmiye (Daily Wage)
+        const yevmiyeItem = PAYMENT_DATA.find(item => item.id === 'yevmiye');
+        const dailyNetYevmiye = yevmiyeItem.net[taxRate] || yevmiyeItem.net['net15'];
+        
+        // Calculate Yevmiye based on working days minus leave days
+        const netYevmiye = dailyNetYevmiye * (workingDays - leaveDays);
+        totalNet += netYevmiye;
+        baseNet += netYevmiye;
+        totalAdditions += (netYevmiye > 0 ? netYevmiye : 0);
+        totalDeductions += (netYevmiye < 0 ? netYevmiye : 0);
+
+        // b) Sendika Aidatı (Union Fee - Deduction)
+        const sendikaItem = PAYMENT_DATA.find(item => item.id === 'sendika');
+        const netSendika = sendikaItem.net[taxRate] || sendikaItem.net['net15'];
+        totalNet += netSendika;
+        totalDeductions += netSendika;
+
+
+        // 2. SELECTABLE ITEMS (Yol and İş Primi)
+        
+        // a) Yol Ücreti
+        const selectedTravel = document.querySelector('input[name="travelType"]:checked').value;
+        const travelItem = PAYMENT_DATA.find(item => item.selectionGroup === 'travelType' && item.selectionValue === selectedTravel);
+        if (travelItem) {
+            const netTravel = travelItem.net[taxRate] || travelItem.net['net15'];
+            totalNet += netTravel;
+            totalAdditions += netTravel;
+        }
+
+        // b) İş Primi
+        const selectedPrimi = document.querySelector('input[name="isPrimi"]:checked').value;
+        const primiItem = PAYMENT_DATA.find(item => item.selectionGroup === 'isPrimi' && item.selectionValue === selectedPrimi);
+        if (primiItem) {
+            const netPrimi = primiItem.net[taxRate] || primiItem.net['net15'];
+            totalNet += netPrimi;
+            totalAdditions += netPrimi;
+        }
+        
+        
+        // 3. FAZLA MESAİ (Overtime)
+        const overtimeCheckbox = document.getElementById('overtimeCheckbox').checked;
+        if (overtimeCheckbox) {
+            const overtimeDays = parseFloat(document.getElementById('overtimeDays').value) || 0;
+            const overtimeType = document.querySelector('input[name="overtimeType"]:checked').value;
+            
+            let factor = 0; // Factor for calculating total overtime
+            if (overtimeType === 'full') {
+                factor = overtimeDays * 1; // Tam Gün: 1 günlük mesai ücreti
+            } else if (overtimeType === 'half') {
+                factor = overtimeDays * 0.5; // Yarım Gün: 0.5 günlük mesai ücreti
+            }
+
+            if (factor > 0) {
+                const overtimeItem = PAYMENT_DATA.find(item => item.id === 'fazlaMesai');
+                const dailyNetOvertime = overtimeItem.net[taxRate] || overtimeItem.net['net15'];
+                const totalNetOvertime = dailyNetOvertime * factor;
+                
+                totalNet += totalNetOvertime;
+                totalAdditions += totalNetOvertime;
+            }
+        }
+
+
+        // 4. FIXED/OPTIONAL ADDITIONS
+        const fixedCheckboxes = document.querySelectorAll('#fixedPaymentsList input[type="checkbox"]');
+        fixedCheckboxes.forEach(checkbox => {
+            if (checkbox.checked) {
+                const netValue = parseFloat(checkbox.dataset.netValue);
+                if (!isNaN(netValue)) {
+                    totalNet += netValue;
+                    totalAdditions += netValue;
+                }
+            }
+        });
+
+
+        // 5. UPDATE UI
+        document.getElementById('baseNetSalary').textContent = formatCurrency(baseNet);
+        // Note: totalDeductions is already negative for correct calculation
+        document.getElementById('totalAdditions').textContent = formatCurrency(totalAdditions);
+        document.getElementById('totalDeductions').textContent = formatCurrency(Math.abs(totalDeductions)); 
+        document.getElementById('totalNetSalary').textContent = formatCurrency(totalNet);
+    }
+
+    // Initial setup and calculation
+    window.onload = () => {
+        renderFixedPayments();
+        calculateSalary();
+    };
+</script>
+
+</body>
+</html>
