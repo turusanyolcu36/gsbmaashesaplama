@@ -1,0 +1,2 @@
+# gsbmaashesaplama
+gsb maaş hesaplama
